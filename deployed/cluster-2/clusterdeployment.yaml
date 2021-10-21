@@ -1,0 +1,97 @@
+## Customizations
+
+# The following can be fixed in the template
+# - eu-west-3          : Which aws region to use (2x instances)
+# - img4.9.0-x86-64-appsub : Which OCP image to deploy (1x instance)
+
+# Dynamic variable that must be changed
+# - cluster-2 : The name assigned to your cluster (3x instances)
+
+---
+apiVersion: hive.openshift.io/v1
+kind: ClusterDeployment
+metadata:
+  name: cluster-2
+  namespace: cluster-2
+  labels:
+    cloud: 'AWS'
+    region: 'eu-west-3'
+    vendor: 'OpenShift'
+spec:
+  baseDomain: rhtelco.io
+  clusterName: cluster-2
+  controlPlaneConfig:
+    servingCertificates: {}
+  installed: false
+  platform:
+    aws:
+      credentialsSecretRef:
+        name: cluster-2-aws-creds
+      region: eu-west-3
+  provisioning:
+    installConfigSecretRef:
+      name: cluster-2-install-config
+    sshPrivateKeySecretRef:
+      name: cluster-2-ssh-private-key
+    imageSetRef:
+       #quay.io/openshift-release-dev/ocp-release:4.4.4-x86_64
+      name: img4.9.0-x86-64-appsub
+  pullSecretRef:
+    name: cluster-2-pull-secret
+---
+apiVersion: cluster.open-cluster-management.io/v1
+kind: ManagedCluster
+metadata:
+  labels:
+    cloud: Amazon
+    name: cluster-2
+    environment: 'dev'
+    vendor: OpenShift
+    region: eu-west-3
+  name: cluster-2
+spec:
+  hubAcceptsClient: true
+---
+apiVersion: hive.openshift.io/v1
+kind: MachinePool
+metadata:
+  name: cluster-2-worker
+  namespace: cluster-2
+spec:
+  clusterDeploymentRef:
+    name: cluster-2
+  name: worker
+  platform:
+    aws:
+      rootVolume:
+        iops: 100
+        size: 100
+        type: gp2
+      type: m5.large
+  replicas: 3
+---
+apiVersion: agent.open-cluster-management.io/v1
+kind: KlusterletAddonConfig
+metadata:
+  name: cluster-2
+  namespace: cluster-2
+spec:
+  clusterName: cluster-2
+  clusterNamespace: cluster-2
+  clusterLabels:
+    cloud: Amazon
+    vendor: OpenShift
+    region: eu-west-3
+  applicationManager:
+    enabled: true
+  policyController:
+    enabled: true
+  searchCollector:
+    enabled: true
+  cisController:
+    enabled: false
+  certPolicyController:
+    enabled: true
+  iamPolicyController:
+    enabled: true
+  version: 2.0.0

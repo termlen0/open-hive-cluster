@@ -1,0 +1,9 @@
+---
+apiVersion: apps.open-cluster-management.io/v1
+kind: Channel
+metadata:
+  name: gitops-open-hive
+  namespace: open-hive
+spec:
+  type: GitHub
+  pathname: https://github.com/termlen0/open-hive-cluster.git

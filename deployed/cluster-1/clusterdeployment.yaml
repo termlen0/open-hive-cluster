@@ -1,0 +1,97 @@
+## Customizations
+
+# The following can be fixed in the template
+# - eu-central-1          : Which aws region to use (2x instances)
+# - img4.9.0-x86-64-appsub : Which OCP image to deploy (1x instance)
+
+# Dynamic variable that must be changed
+# - cluster-1 : The name assigned to your cluster (3x instances)
+
+---
+apiVersion: hive.openshift.io/v1
+kind: ClusterDeployment
+metadata:
+  name: cluster-1
+  namespace: cluster-1
+  labels:
+    cloud: 'AWS'
+    region: 'eu-central-1'
+    vendor: 'OpenShift'
+spec:
+  baseDomain: rhtelco.io
+  clusterName: cluster-1
+  controlPlaneConfig:
+    servingCertificates: {}
+  installed: false
+  platform:
+    aws:
+      credentialsSecretRef:
+        name: cluster-1-aws-creds
+      region: eu-central-1
+  provisioning:
+    installConfigSecretRef:
+      name: cluster-1-install-config
+    sshPrivateKeySecretRef:
+      name: cluster-1-ssh-private-key
+    imageSetRef:
+       #quay.io/openshift-release-dev/ocp-release:4.4.4-x86_64
+      name: img4.9.0-x86-64-appsub
+  pullSecretRef:
+    name: cluster-1-pull-secret
+---
+apiVersion: cluster.open-cluster-management.io/v1
+kind: ManagedCluster
+metadata:
+  labels:
+    cloud: Amazon
+    name: cluster-1
+    environment: 'dev'
+    vendor: OpenShift
+    region: eu-central-1
+  name: cluster-1
+spec:
+  hubAcceptsClient: true
+---
+apiVersion: hive.openshift.io/v1
+kind: MachinePool
+metadata:
+  name: cluster-1-worker
+  namespace: cluster-1
+spec:
+  clusterDeploymentRef:
+    name: cluster-1
+  name: worker
+  platform:
+    aws:
+      rootVolume:
+        iops: 100
+        size: 100
+        type: gp2
+      type: m5.large
+  replicas: 3
+---
+apiVersion: agent.open-cluster-management.io/v1
+kind: KlusterletAddonConfig
+metadata:
+  name: cluster-1
+  namespace: cluster-1
+spec:
+  clusterName: cluster-1
+  clusterNamespace: cluster-1
+  clusterLabels:
+    cloud: Amazon
+    vendor: OpenShift
+    region: eu-central-1
+  applicationManager:
+    enabled: true
+  policyController:
+    enabled: true
+  searchCollector:
+    enabled: true
+  cisController:
+    enabled: false
+  certPolicyController:
+    enabled: true
+  iamPolicyController:
+    enabled: true
+  version: 2.0.0
